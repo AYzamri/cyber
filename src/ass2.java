@@ -12,9 +12,11 @@ public class ass2
     private static Map<String,String> _flags = new HashMap<String,String>();
     private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
     private static Map<String,String> _key=new HashMap<String,String>();
+    private static String _iv;
     private static void runAlgorithem(String algo)throws IOException{
     //run algorithem sub_cbc_10
         if(algo.equals("sub_cbc_10")){
+            getIV();
             if(_flags.get("-c").equals("encryption")){
                 run_CBC10_EncryptionAction();
                 getKey(true);
@@ -45,6 +47,9 @@ public class ass2
             _key.put(key,value);
         }
         s.close();
+    }
+    private static void getIV()throws IOException{
+        _iv=readFile(_flags.get("-v"));
     }
     private static void run_CBC10_EncryptionAction() throws IOException {
 
