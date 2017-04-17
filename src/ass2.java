@@ -61,11 +61,6 @@ public class ass2
             }
         }
         return toReturn;
-        
-        
-        
-        
-        
     }
     
     
@@ -78,7 +73,10 @@ public class ass2
 
         String PlainText = readFile(_flags.get("-t"));
         String currentBlock ;
-        String cipherText="" ;
+        String cipherTextBlock="" ;
+        String PlainTextAfterXor;
+        String CipheredText= "";
+
         int check= PlainText.length()%10;
         for (int i=0 ; i<check;i++){
             PlainText.concat("0");
@@ -86,10 +84,12 @@ public class ass2
         for (int i = 0 ; i<PlainText.length();i=i+10){
                 currentBlock= PlainText.substring(i, i + 9);
                 if(i==0){
-                    XOR_AB(currentBlock,_iv);
+                    PlainTextAfterXor =XOR_AB(currentBlock,_iv);
                 }
                 else
-                    XOR_AB(currentBlock,cipherText);
+                    PlainTextAfterXor= XOR_AB(currentBlock,cipherTextBlock);
+            cipherTextBlock= useKeyOn(PlainTextAfterXor);
+            CipheredText.concat(cipherTextBlock);
         }
 
     }
