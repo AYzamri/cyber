@@ -1,3 +1,8 @@
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -7,7 +12,7 @@ public class ass2
 {
     private static Map<String,String> _flags = new HashMap<String,String>();
     private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
-    private static boolean runAlgorithem(String algo){
+    private static void runAlgorithem(String algo)throws IOException{
     //run algorithem sub_cbc_10
         if(algo=="sub_cbc_10"){
             if(_flags.get("-c")=="encryption")
@@ -17,26 +22,30 @@ public class ass2
             else{
                 System.out.println("Please enter valid value for action in subs_cbc_10");
             }
-        
-        
-        
-        
-        
+
         }
     }
-    private static void run_CBC10_EncryptionAction(){
-    
-    
-    
-    
+    private static void run_CBC10_EncryptionAction() throws IOException {
+
+        String content = readFile("test.txt");
+
     }
+
+    private static String readFile(String path)
+            throws IOException
+    {
+        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        return new String(encoded, StandardCharsets.UTF_8);
+    }
+
+
     private static void run_CBC10_DecryptionAction(){
     
     
     
     }
     
-    public static void main (String[] args){
+    public static void main (String[] args)throws IOException{
         for (int n = 0; n < args.length; n++)
         {
             if (args[n].charAt(0) == '-')
