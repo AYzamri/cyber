@@ -12,11 +12,17 @@ public class ass2
 {
     private static Map<String,String> _flags = new HashMap<String,String>();
     private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
+    private static Map<String,String> _key=new HashMap<String,String>();
+    private static String _iv;
     private static void runAlgorithem(String algo)throws IOException{
     //run algorithem sub_cbc_10
         if(algo.equals("sub_cbc_10")){
-            if(_flags.get("-c").equals("encryption"))
+            getIV();
+            if(_flags.get("-c").equals("encryption")){
                 run_CBC10_EncryptionAction();
+                getKey(true);
+            }
+
             else if(_flags.get("-c").equals("decryption"))
                 run_CBC10_DecryptionAction();
             else{
@@ -24,6 +30,27 @@ public class ass2
             }
 
         }
+    }
+    //get the encryptor key
+    private static void getKey(boolean TrueEncrypt_FalseDecrypt)throws IOException{
+        String keyContent=readFile(_flags.get("-k"));
+        Scanner s = new Scanner(keyContent).useDelimiter("\\s*|\\n||\\r");
+        while(s.hasNext()){
+            String key,value;
+            if(TrueEncrypt_FalseDecrypt){
+                 key=s.next();
+                 value=s.next();
+            }
+            else{
+                 value=s.next();
+                 key=s.next();
+            }
+            _key.put(key,value);
+        }
+        s.close();
+    }
+    private static void getIV()throws IOException{
+        _iv=readFile(_flags.get("-v"));
     }
     private static void run_CBC10_EncryptionAction() throws IOException {
 
