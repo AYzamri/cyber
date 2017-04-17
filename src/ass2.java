@@ -54,10 +54,10 @@ public class ass2
         String toReturn="";
         for(int j=0;j<textToUseWithKey.length();j++){
             if(_key.containsKey(textToUseWithKey.charAt(j))){
-                toReturn.concat(_key.get(textToUseWithKey.charAt(j)));
+                toReturn=  toReturn.concat(_key.get(textToUseWithKey.charAt(j)));
             }
             else{
-                toReturn.concat(textToUseWithKey.charAt(j)+"");
+                toReturn= toReturn.concat(textToUseWithKey.charAt(j)+"");
             }
         }
         return toReturn;
@@ -80,19 +80,20 @@ public class ass2
         if(check>0){
             for (int i=0 ; i<(10-check);i++)
             {
-                PlainText.concat("0");
+                char zero = (char)0;
+                PlainText=PlainText+zero;
             }
         }
 
         for (int i = 0 ; i<PlainText.length();i=i+10){
-                currentBlock= PlainText.substring(i, i + 10;
+                currentBlock= PlainText.substring(i, i + 10);
                 if(i==0){
                     PlainTextAfterXor =XOR_AB(currentBlock,_iv);
                 }
                 else
                     PlainTextAfterXor= XOR_AB(currentBlock,cipherTextBlock);
             cipherTextBlock= useKeyOn(PlainTextAfterXor);
-            CipheredText.concat(cipherTextBlock);
+            CipheredText=CipheredText.concat(cipherTextBlock);
         }
 
     }
