@@ -33,7 +33,16 @@ public class ass2
         String keyContent=readFile(_flags.get("-k"));
         Scanner s = new Scanner(keyContent).useDelimiter("\\s*|\\n||\\r");
         while(s.hasNext()){
-            _key.put(s.next(),s.next());
+            String key,value;
+            if(TrueEncrypt_FalseDecrypt){
+                 key=s.next();
+                 value=s.next();
+            }
+            else{
+                 value=s.next();
+                 key=s.next();
+            }
+            _key.put(key,value);
         }
         s.close();
     }
