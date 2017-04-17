@@ -76,7 +76,6 @@ public class ass2
         String cipherTextBlock="" ;
         String PlainTextAfterXor;
         String CipheredText= "";
-
         int check= PlainText.length()%10;
         for (int i=0 ; i<check;i++){
             PlainText.concat("0");
