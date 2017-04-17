@@ -49,6 +49,28 @@ public class ass2
         }
         s.close();
     }
+    //uses the key in order to encrypt/decrypt
+    private static String useKeyOn(String textToUseWithKey){
+        String toReturn="";
+        for(int j=0;j<textToUseWithKey.length();j++){
+            if(_key.containsKey(textToUseWithKey.charAt(j))){
+                toReturn.concat(_key.get(textToUseWithKey.charAt(j)));
+            }
+            else{
+                toReturn.concat(textToUseWithKey.charAt(j)+"");
+            }
+        }
+        return toReturn;
+        
+        
+        
+        
+        
+    }
+    
+    
+    
+    
     private static void getIV()throws IOException{
         _iv=readFile(_flags.get("-v"));
     }
