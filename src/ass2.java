@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -14,10 +13,10 @@ public class ass2
     private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
     private static void runAlgorithem(String algo)throws IOException{
     //run algorithem sub_cbc_10
-        if(algo=="sub_cbc_10"){
-            if(_flags.get("-c")=="encryption")
+        if(algo.equals("sub_cbc_10")){
+            if(_flags.get("-c").equals("encryption"))
                 run_CBC10_EncryptionAction();
-            else if(_flags.get("-c")=="decryption")
+            else if(_flags.get("-c").equals("decryption"))
                 run_CBC10_DecryptionAction();
             else{
                 System.out.println("Please enter valid value for action in subs_cbc_10");
