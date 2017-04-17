@@ -26,14 +26,14 @@ public class ass2
     }
     private static void run_CBC10_EncryptionAction() throws IOException {
 
-        String content = readFile("test.txt");
+        String content = readFile(_flags.get("-t"));
 
     }
 
     private static String readFile(String path)
             throws IOException
     {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        byte[] encoded = Files.readAllBytes(Paths.get("."+path));
         return new String(encoded, StandardCharsets.UTF_8);
     }
 
