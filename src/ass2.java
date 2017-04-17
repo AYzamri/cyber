@@ -14,7 +14,7 @@ public class ass2
     private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
     private static Map<String,String> _key=new HashMap<String,String>();
     private static String _iv;
-    private static void runAlgorithem(String algo)throws IOException{
+    private static void runAlgorithm(String algo)throws IOException{
     //run algorithem sub_cbc_10
         if(algo.equals("sub_cbc_10")){
             getIV();
@@ -61,12 +61,6 @@ public class ass2
             }
         }
         return toReturn;
-        
-        
-        
-        
-        
-        
     }
     
     
@@ -77,21 +71,38 @@ public class ass2
     }
     private static void run_CBC10_EncryptionAction() throws IOException {
 
-        String content = readFile(_flags.get("-t"));
+        String PlainText = readFile(_flags.get("-t"));
+        String currentBlock ;
+        String cipherTextBlock="" ;
+        String PlainTextAfterXor;
+        String CipheredText= "";
+
+        int check= PlainText.length()%10;
+        for (int i=0 ; i<check;i++){
+            PlainText.concat("0");
+        }
+        for (int i = 0 ; i<PlainText.length();i=i+10){
+                currentBlock= PlainText.substring(i, i + 9);
+                if(i==0){
+                    PlainTextAfterXor =XOR_AB(currentBlock,_iv);
+                }
+                else
+                    PlainTextAfterXor= XOR_AB(currentBlock,cipherTextBlock);
+            cipherTextBlock= useKeyOn(PlainTextAfterXor);
+            CipheredText.concat(cipherTextBlock);
+        }
 
     }
 
-    private static void ByteBlock(String s) throws UnsupportedEncodingException {
+    private static String XOR_AB(String A, String B) throws UnsupportedEncodingException {
 
-        s="ABCDQRSTAB";
-        String iv = "0000000000";
-        byte[] a = iv.getBytes("UTF-8");
-        byte[] b= s.getBytes("UTF-8");
+        byte[] a = A.getBytes("UTF-8");
+        byte[] b= B.getBytes("UTF-8");
         byte[] ABxor= new byte[10];
         for (int i=0 ;i<a.length;i++ ) {
             ABxor[i] = (byte)(a[i] ^ b[i]);
         }
-        String result= new String(ABxor,"UTF-8");
+       return new String(ABxor,"UTF-8");
         }
 
 
@@ -123,8 +134,8 @@ public class ass2
                 _flags.put(name, value);
             }
         }
-        runAlgorithem(_flags.get("-a"));
-        ByteBlock("a");
+        runAlgorithm(_flags.get("-a"));
+
     }
 
 
