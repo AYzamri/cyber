@@ -85,7 +85,7 @@ public class ass2
         }
 
         for (int i = 0 ; i<PlainText.length();i=i+10){
-                currentBlock= PlainText.substring(i, i + 10;
+                currentBlock= PlainText.substring(i, i + 10);
                 if(i==0){
                     PlainTextAfterXor =XOR_AB(currentBlock,_iv);
                 }
