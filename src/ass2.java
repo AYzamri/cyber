@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -30,6 +31,22 @@ public class ass2
 
     }
 
+    private static void ByteBlock(String s) throws UnsupportedEncodingException {
+
+        s="ABCDQRSTAB";
+        String iv = "0000000000";
+        byte[] a = iv.getBytes("UTF-8");
+        byte[] b= s.getBytes("UTF-8");
+        byte[] ABxor= new byte[10];
+        for (int i=0 ;i<a.length;i++ ) {
+            ABxor[i] = (byte)(a[i] ^ b[i]);
+        }
+        String result= new String(ABxor,"UTF-8");
+        }
+
+
+
+
     private static String readFile(String path)
             throws IOException
     {
@@ -57,7 +74,9 @@ public class ass2
             }
         }
         runAlgorithem(_flags.get("-a"));
+        ByteBlock("a");
     }
-    
+
+
 
 }
