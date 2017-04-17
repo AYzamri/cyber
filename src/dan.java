@@ -3,4 +3,9 @@
  */
 public class dan
 {
+    int num;
+    dan(){
+        num=0;
+        
+    }
 }
