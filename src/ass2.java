@@ -77,11 +77,15 @@ public class ass2
         String PlainTextAfterXor;
         String CipheredText= "";
         int check= PlainText.length()%10;
-        for (int i=0 ; i<check;i++){
-            PlainText.concat("0");
+        if(check>0){
+            for (int i=0 ; i<(10-check);i++)
+            {
+                PlainText.concat("0");
+            }
         }
+
         for (int i = 0 ; i<PlainText.length();i=i+10){
-                currentBlock= PlainText.substring(i, i + 9);
+                currentBlock= PlainText.substring(i, i + 10;
                 if(i==0){
                     PlainTextAfterXor =XOR_AB(currentBlock,_iv);
                 }
