@@ -1,5 +1,4 @@
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -14,17 +13,21 @@ public class ass2
     private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
     private static Map<String,String> _key=new HashMap<String,String>();
     private static String _iv;
+    private static String _outputPath;
     private static void runAlgorithm(String algo)throws IOException{
     //run algorithem sub_cbc_10
         if(algo.equals("sub_cbc_10")){
-            getIV();
+            _iv=readFile(_flags.get("-v"));
+            _outputPath="."+_flags.get("-o");
             if(_flags.get("-c").equals("encryption")){
-                run_CBC10_EncryptionAction();
                 getKey(true);
+                run_CBC10_EncryptionAction();
             }
 
-            else if(_flags.get("-c").equals("decryption"))
+            else if(_flags.get("-c").equals("decryption")){
+                getKey(false);
                 run_CBC10_DecryptionAction();
+            }
             else{
                 System.out.println("Please enter valid value for action in subs_cbc_10");
             }
@@ -53,21 +56,14 @@ public class ass2
     private static String useKeyOn(String textToUseWithKey){
         String toReturn="";
         for(int j=0;j<textToUseWithKey.length();j++){
-            if(_key.containsKey(textToUseWithKey.charAt(j))){
-                toReturn=  toReturn.concat(_key.get(textToUseWithKey.charAt(j)));
+            if(_key.containsKey(textToUseWithKey.charAt(j)+"")){
+                toReturn=toReturn.concat(_key.get(textToUseWithKey.charAt(j)+""));
             }
             else{
                 toReturn= toReturn.concat(textToUseWithKey.charAt(j)+"");
             }
         }
         return toReturn;
-    }
-    
-    
-    
-    
-    private static void getIV()throws IOException{
-        _iv=readFile(_flags.get("-v"));
     }
     private static void run_CBC10_EncryptionAction() throws IOException {
 
@@ -84,7 +80,6 @@ public class ass2
                 PlainText=PlainText+zero;
             }
         }
-
         for (int i = 0 ; i<PlainText.length();i=i+10){
                 currentBlock= PlainText.substring(i, i + 10);
                 if(i==0){
@@ -96,6 +91,17 @@ public class ass2
             CipheredText=CipheredText.concat(cipherTextBlock);
         }
 
+         writeOutput(CipheredText);
+    }
+    private static void writeOutput(String textToWrite)throws IOException{
+        File file = new File(_outputPath);
+        file.getParentFile().mkdirs(); // Will create parent directories if not exists
+        file.createNewFile();
+        FileOutputStream s = new FileOutputStream(file,true);
+        PrintWriter out = new PrintWriter( _outputPath );
+        out.write(textToWrite);
+        out.close();
+   
     }
 
     private static String XOR_AB(String A, String B) throws UnsupportedEncodingException {
@@ -120,12 +126,36 @@ public class ass2
     }
 
 
-    private static void run_CBC10_DecryptionAction(){
-    
-    
+    private static void run_CBC10_DecryptionAction()throws IOException {
+        String to_decipher = readFile(_flags.get("-t"));
+        String currentBlock ;
+        String decipheredTextBlock="" ;
+        String Prev_undecipheredBlock="";
+        String PlainTextAfterXor;
+        String deCipheredText= "";
+        int check= to_decipher.length()%10;
+        if(check>0){
+            for (int i=0 ; i<(10-check);i++)
+            {
+                char zero = (char)0;
+                to_decipher=to_decipher+zero;
+            }
+        }
+        for (int i = 0 ; i<to_decipher.length();i=i+10){
+            currentBlock= to_decipher.substring(i, i + 10);
+            decipheredTextBlock= useKeyOn(currentBlock);
+            if(i==0){
+                PlainTextAfterXor =XOR_AB(decipheredTextBlock,_iv);
+            }
+            else{
+                PlainTextAfterXor= XOR_AB(Prev_undecipheredBlock,decipheredTextBlock);
+            }
+            Prev_undecipheredBlock=new String(currentBlock);
+            deCipheredText=deCipheredText.concat(PlainTextAfterXor);
+        }
+        writeOutput(deCipheredText);
     
     }
-    
     public static void main (String[] args)throws IOException{
         for (int n = 0; n < args.length; n++)
         {
