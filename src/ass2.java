@@ -48,39 +48,62 @@ public class ass2
     private static void run_CBC10_AttackAction()  throws IOException
     {
         LoadDictionary();
+        setKeys();
         //read first 500 in given file
-        String PartOfCipheredText = readFile(_flags.get("-t").substring(500));
-
+        String PartOfCipheredText = (readFile(_flags.get("-t"))).substring(0,3000);
         Pair<String, Integer> maxMatch=new Pair<String, Integer>("",0);
-        String currentKey="";
-        setDecryptor(currentKey);
-        String deCipherToCheck=run_CBC10_DecryptionAction(PartOfCipheredText);
-        int counterWordsInDict=0;
-        int totalWords=0;
-        Scanner decipheredTextSplited = new Scanner(deCipherToCheck).useDelimiter("\\s*|\\n||\\r");
-        while(decipheredTextSplited.hasNext())
-        {
-            totalWords++;
-            if(totalWords==50&&totalWords>4*counterWordsInDict){
-                break;
-                 }
-            if(_dictionary.contains(decipheredTextSplited.next())){
-                 counterWordsInDict++;
-            }
-            if(counterWordsInDict>maxMatch.getValue()){
-                maxMatch=new Pair<>(currentKey,counterWordsInDict);
-            }
+        HashSet<String> SetOfKeys = new HashSet<String>();
+        permutation("abcdefgh",SetOfKeys);
+        int counter=0;
+        for (String currentKey:SetOfKeys) {
+
+            setDecryptor(currentKey);
+            String deCipherToCheck=run_CBC10_DecryptionAction(PartOfCipheredText);
+            int counterWordsInDict=0;
+            int totalWords=0;
+
+            String[] decipheredTextSplited = deCipherToCheck.split("(\\s+)|(\\n)|(\\r)|(\\.)");
+            int lengthOfSplited=decipheredTextSplited.length;
+            while(totalWords <decipheredTextSplited.length )
+            {
+                if(totalWords>=0.5*lengthOfSplited&& totalWords > 5*counterWordsInDict){
+                    break;
+                }
+                if(_dictionary.contains(decipheredTextSplited[totalWords].toLowerCase())){
+                    counterWordsInDict++;
+                }
+                if(counterWordsInDict>maxMatch.getValue()){
+                    maxMatch=new Pair<>(currentKey,counterWordsInDict);
+                }
+                totalWords++;
         }
-
-
-
-
-
-
+            counter++;
+        }
+        int a=0;
     }
 
+
+    private static void setKeys (){
+
+        _key.put("a","");
+        _key.put("b","");
+        _key.put("c","");
+        _key.put("d","");
+        _key.put("e","");
+        _key.put("f","");
+        _key.put("g","");
+        _key.put("h","");
+}
     private static void setDecryptor(String currentKey)
     {
+        _key.replace("a",currentKey.charAt(0)+"");
+        _key.replace("b",currentKey.charAt(1)+"");
+        _key.replace("c",currentKey.charAt(2)+"");
+        _key.replace("d",currentKey.charAt(3)+"");
+        _key.replace("e",currentKey.charAt(4)+"");
+        _key.replace("f",currentKey.charAt(5)+"");
+        _key.replace("g",currentKey.charAt(6)+"");
+        _key.replace("h",currentKey.charAt(7)+"");
     }
 
 
@@ -159,8 +182,9 @@ public class ass2
 
         byte[] a = A.getBytes("UTF-8");
         byte[] b= B.getBytes("UTF-8");
-        byte[] ABxor= new byte[10];
-        for (int i=0 ;i<a.length;i++ ) {
+        int min = Math.min(a.length,b.length);
+        byte[] ABxor= new byte[min];
+        for (int i=0 ;i<min;i++ ) {
             ABxor[i] = (byte)(a[i] ^ b[i]);
         }
        return new String(ABxor,"UTF-8");
@@ -230,40 +254,20 @@ public class ass2
         runAlgorithm(_flags.get("-a"));
 
 
-        char set1[] = {'a','b','c','d','e','f','g','h'};
-        int k = 8;
-        List<String> S = new ArrayList<String>();
-        CreateSetOfAllPossibles(set1, k, S);
-
     }
 
 /**********************/
-// The method that get all possible strings of length k.  It is
-//  mainly a wrapper over recursive function SetOfAllpossibles()
-static void CreateSetOfAllPossibles(char set[], int k, List<String> S) {
-
-    int n = set.length;
-   SetOfAllpossibles(set, "", n, k, S);
+public static void permutation(String str, HashSet<String> s) {
+    permutation("", str, s);
 }
 
-    // The main recursive method to print all possible strings of length k
-    static void SetOfAllpossibles(char set[], String prefix, int n, int k,List<String> S ) {
-
-        // Base case: k is 0, print prefix
-        if (k == 0) {
-           S.add(prefix);
-            return;
-        }
-
-        // One by one add all characters from set and recursively
-        // call for k equals to k-1
-        for (int i = 0; i < n; ++i) {
-
-            // Next character of input added
-            String newPrefix = prefix + set[i];
-
-            // k is decreased, because we have added a new character
-            SetOfAllpossibles(set, newPrefix, n, k - 1,S);
+    private static void permutation(String prefix, String str, HashSet<String> s) {
+        int n = str.length();
+        if (n == 0 && !s.contains(prefix))
+            s.add(prefix);
+        else {
+            for (int i = 0; i < n; i++)
+                permutation(prefix + str.charAt(i), str.substring(0, i) + str.substring(i+1, n),s);
         }
     }
 }
