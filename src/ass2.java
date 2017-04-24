@@ -143,6 +143,7 @@ public class ass2
 
          writeOutput(CipheredText);
     }
+
     private static void writeOutput(String textToWrite)throws IOException{
         File file = new File(_outputPath);
         file.getParentFile().mkdirs(); // Will create parent directories if not exists
@@ -151,7 +152,7 @@ public class ass2
         PrintWriter out = new PrintWriter( _outputPath );
         out.write(textToWrite);
         out.close();
-   
+
     }
 
     private static String XOR_AB(String A, String B) throws UnsupportedEncodingException {
