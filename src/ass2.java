@@ -1,4 +1,9 @@
-import java.io.*;
+import javafx.util.Pair;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -44,10 +49,29 @@ public class ass2
     {
         LoadDictionary();
         //read first 500 in given file
-        String PartOfCipherdText = readFile(_flags.get("-t").substring(500));
+        String PartOfCipheredText = readFile(_flags.get("-t").substring(500));
+    
+        Pair<String, Integer> maxMatch=new Pair<String, Integer>("",0);
         String currentKey="";
         setDecryptor(currentKey);
-        
+        String deCipherToCheck=run_CBC10_DecryptionAction(PartOfCipheredText);
+        int counterWordsInDict=0;
+        int totalWords=0;
+        Scanner decipheredTextSplited = new Scanner(deCipherToCheck).useDelimiter("\\s*|\\n||\\r");
+        while(decipheredTextSplited.hasNext())
+        {
+            totalWords++;
+            if(totalWords==50&&totalWords>4*counterWordsInDict){
+                break;
+                 }
+            if(_dictionary.contains(decipheredTextSplited.next())){
+                 counterWordsInDict++;
+            }
+            if(counterWordsInDict>maxMatch.getValue()){
+                maxMatch=new Pair<>(currentKey,counterWordsInDict);
+            }
+        }
+
         
         
         
