@@ -11,6 +11,7 @@ public class ass2
 {
     private static Map<String,String> _flags = new HashMap<String,String>();
     private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
+    private static Set _dictionary=new HashSet<String>();
     private static Map<String,String> _key=new HashMap<String,String>();
     private static String _iv;
     private static String _outputPath;
@@ -26,7 +27,11 @@ public class ass2
 
             else if(_flags.get("-c").equals("decryption")){
                 getKey(false);
-                run_CBC10_DecryptionAction();
+                String toWrite=run_CBC10_DecryptionAction(readFile(_flags.get("-t")));
+                writeOutput(toWrite);
+            }
+            else if(_flags.get("-c").equals("attack")){
+                run_CBC10_AttackAction();
             }
             else{
                 System.out.println("Please enter valid value for action in subs_cbc_10");
@@ -34,6 +39,27 @@ public class ass2
 
         }
     }
+    
+    private static void run_CBC10_AttackAction()  throws IOException
+    {
+        LoadDictionary();
+        //read first 500 in given file
+        String PartOfCipherdText = readFile(_flags.get("-t").substring(500));
+        String currentKey="";
+        setDecryptor(currentKey);
+        
+        
+        
+        
+        
+        
+    }
+    
+    private static void setDecryptor(String currentKey)
+    {
+    }
+    
+    
     //get the encryptor key
     private static void getKey(boolean TrueEncrypt_FalseDecrypt)throws IOException{
         String keyContent=readFile(_flags.get("-k"));
@@ -97,7 +123,7 @@ public class ass2
         File file = new File(_outputPath);
         file.getParentFile().mkdirs(); // Will create parent directories if not exists
         file.createNewFile();
-        FileOutputStream s = new FileOutputStream(file,true);
+        //FileOutputStream s = new FileOutputStream(file,true);
         PrintWriter out = new PrintWriter( _outputPath );
         out.write(textToWrite);
         out.close();
@@ -124,10 +150,17 @@ public class ass2
         byte[] encoded = Files.readAllBytes(Paths.get("."+path));
         return new String(encoded, StandardCharsets.UTF_8);
     }
+    private static void LoadDictionary()throws IOException{
+        String DictContent=readFile("\\Dict\\dictionary.txt");
+        Scanner scan = new Scanner(DictContent);
+        while(scan.hasNext()){
+            _dictionary.add(scan.next());
+        }
+        scan.close();
+    }
 
 
-    private static void run_CBC10_DecryptionAction()throws IOException {
-        String to_decipher = readFile(_flags.get("-t"));
+    private static String run_CBC10_DecryptionAction(String to_decipher)throws IOException {
         String currentBlock ;
         String decipheredTextBlock="" ;
         String Prev_undecipheredBlock="";
@@ -153,10 +186,11 @@ public class ass2
             Prev_undecipheredBlock=new String(currentBlock);
             deCipheredText=deCipheredText.concat(PlainTextAfterXor);
         }
-        writeOutput(deCipheredText);
+        return deCipheredText;
     
     }
     public static void main (String[] args)throws IOException{
+        
         for (int n = 0; n < args.length; n++)
         {
             if (args[n].charAt(0) == '-')
@@ -169,7 +203,6 @@ public class ass2
             }
         }
         runAlgorithm(_flags.get("-a"));
-
     }
 
 
