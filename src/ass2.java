@@ -93,15 +93,16 @@ public class ass2
 
          writeOutput(CipheredText);
     }
+
     private static void writeOutput(String textToWrite)throws IOException{
         File file = new File(_outputPath);
         file.getParentFile().mkdirs(); // Will create parent directories if not exists
         file.createNewFile();
-        FileOutputStream s = new FileOutputStream(file,true);
+       // FileOutputStream s = new FileOutputStream(file,true);
         PrintWriter out = new PrintWriter( _outputPath );
         out.write(textToWrite);
         out.close();
-   
+
     }
 
     private static String XOR_AB(String A, String B) throws UnsupportedEncodingException {
@@ -157,6 +158,8 @@ public class ass2
     
     }
     public static void main (String[] args)throws IOException{
+
+        /*
         for (int n = 0; n < args.length; n++)
         {
             if (args[n].charAt(0) == '-')
@@ -169,9 +172,42 @@ public class ass2
             }
         }
         runAlgorithm(_flags.get("-a"));
+        */
+
+        char set1[] = {'a','b','c','d','e','f','g','h'};
+        int k = 8;
+        List<String> S = new ArrayList<String>();
+        CreateSetOfAllPossibles(set1, k, S);
 
     }
 
+/**********************/
+// The method that get all possible strings of length k.  It is
+//  mainly a wrapper over recursive function SetOfAllpossibles()
+static void CreateSetOfAllPossibles(char set[], int k, List<String> S) {
 
+    int n = set.length;
+   SetOfAllpossibles(set, "", n, k, S);
+}
 
+    // The main recursive method to print all possible strings of length k
+    static void SetOfAllpossibles(char set[], String prefix, int n, int k,List<String> S ) {
+
+        // Base case: k is 0, print prefix
+        if (k == 0) {
+           S.add(prefix);
+            return;
+        }
+
+        // One by one add all characters from set and recursively
+        // call for k equals to k-1
+        for (int i = 0; i < n; ++i) {
+
+            // Next character of input added
+            String newPrefix = prefix + set[i];
+
+            // k is decreased, because we have added a new character
+            SetOfAllpossibles(set, newPrefix, n, k - 1,S);
+        }
+    }
 }
