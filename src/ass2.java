@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,11 +48,14 @@ public class ass2
 
     private static void run_CBC10_AttackAction()  throws IOException
     {
-        int Sample_Size= 300;
+        int Sample_Size= 800;
         LoadDictionary();
         setKeys();
         //read first 500 in given file
         byte[] CipheredText = (readFile_bytes(_flags.get("-t")));
+        if(CipheredText.length<Sample_Size){
+            Sample_Size=CipheredText.length;
+        }
         byte[] PartOfCipheredText=new byte[Sample_Size];
         System.arraycopy(CipheredText,0,PartOfCipheredText,0,Sample_Size);
         Pair<String, Integer> maxMatch=new Pair<String, Integer>("",0);
@@ -67,10 +71,18 @@ public class ass2
             int lengthOfSplited=decipheredTextSplited.length;
             while(totalWords <decipheredTextSplited.length )
             {
+                String currentWord = decipheredTextSplited[totalWords];
+                if(currentWord.matches(".*\\d.*")){ // if number
+                    counterWordsInDict++;
+                    totalWords++;
+                    continue;
+                }
+
+
                 if(totalWords>=0.5*lengthOfSplited&& totalWords > 5*counterWordsInDict){
                     break;
                 }
-                if(_dictionary.contains(decipheredTextSplited[totalWords].toLowerCase())){
+                if(_dictionary.contains(currentWord.toLowerCase())){
                     counterWordsInDict++;
                 }
                 if(counterWordsInDict>maxMatch.getValue()){
@@ -80,9 +92,27 @@ public class ass2
         }
             counter++;
         }
-        int a=0;
+
+        Map<Character,Character> zamrial = getTheKey(maxMatch.getKey());
+        WriteKeyToFile(zamrial);
+
     }
 
+    private static void WriteKeyToFile (Map<Character,Character> keyToWrite) throws IOException {
+        String sringush="";
+        for (Character c:keyToWrite.keySet()) {
+            sringush=sringush+ (c + " " + keyToWrite.get(c) + "\n");
+        }
+        writeOutput(sringush);
+    }
+
+    private static Map<Character,Character> getTheKey(String s){
+
+        setDecryptor(s);
+        Map<Character,Character> KeyMap = new HashMap<>();
+        for (Character c:_key.keySet()) KeyMap.put(_key.get(c), c);
+        return KeyMap;
+    }
 
     private static void setKeys (){
 
@@ -205,7 +235,7 @@ public class ass2
     private static byte[] readFile_bytes(String path)
             throws IOException
     {
-        Path filePath = Paths.get(path);
+        Path filePath = Paths.get("."+path);
         byte[] encoded = Files.readAllBytes(filePath);
         return  encoded;
     }
