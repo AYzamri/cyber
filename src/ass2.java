@@ -50,7 +50,7 @@ public class ass2
         LoadDictionary();
         setKeys();
         //read first 500 in given file
-        String PartOfCipheredText = (readFile(_flags.get("-t"))).substring(0,3000);
+        String PartOfCipheredText = (readFile(_flags.get("-t"))).substring(0,250);
         Pair<String, Integer> maxMatch=new Pair<String, Integer>("",0);
         HashSet<String> SetOfKeys = new HashSet<String>();
         permutation("abcdefgh",SetOfKeys);
