@@ -17,7 +17,7 @@ public class ass2
     private static Map<String,String> _flags = new HashMap<String,String>();
     private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
     private static Set _dictionary=new HashSet<String>();
-    private static Map<String,String> _key=new HashMap<String,String>();
+    private static Map<Character,Character> _key=new HashMap<Character,Character>();
     private static String _iv;
     private static String _outputPath;
     private static void runAlgorithm(String algo)throws IOException{
@@ -47,10 +47,11 @@ public class ass2
 
     private static void run_CBC10_AttackAction()  throws IOException
     {
+        int Sample_Size= 1000;
         LoadDictionary();
         setKeys();
         //read first 500 in given file
-        String PartOfCipheredText = (readFile(_flags.get("-t"))).substring(0,3000);
+        String PartOfCipheredText = (readFile(_flags.get("-t"))).substring(0,2000);
         Pair<String, Integer> maxMatch=new Pair<String, Integer>("",0);
         HashSet<String> SetOfKeys = new HashSet<String>();
         permutation("abcdefgh",SetOfKeys);
@@ -62,7 +63,7 @@ public class ass2
             int counterWordsInDict=0;
             int totalWords=0;
 
-            String[] decipheredTextSplited = deCipherToCheck.split("(\\s+)|(\\n)|(\\r)|(\\.)");
+            String[] decipheredTextSplited = deCipherToCheck.split("[\\.,\\s!;?:&\"\\[\\]]+");
             int lengthOfSplited=decipheredTextSplited.length;
             while(totalWords <decipheredTextSplited.length )
             {
@@ -85,25 +86,25 @@ public class ass2
 
     private static void setKeys (){
 
-        _key.put("a","");
-        _key.put("b","");
-        _key.put("c","");
-        _key.put("d","");
-        _key.put("e","");
-        _key.put("f","");
-        _key.put("g","");
-        _key.put("h","");
+        _key.put('a',' ');
+        _key.put('b',' ');
+        _key.put('c',' ');
+        _key.put('d',' ');
+        _key.put('e',' ');
+        _key.put('f',' ');
+        _key.put('g',' ');
+        _key.put('h',' ');
 }
     private static void setDecryptor(String currentKey)
     {
-        _key.replace("a",currentKey.charAt(0)+"");
-        _key.replace("b",currentKey.charAt(1)+"");
-        _key.replace("c",currentKey.charAt(2)+"");
-        _key.replace("d",currentKey.charAt(3)+"");
-        _key.replace("e",currentKey.charAt(4)+"");
-        _key.replace("f",currentKey.charAt(5)+"");
-        _key.replace("g",currentKey.charAt(6)+"");
-        _key.replace("h",currentKey.charAt(7)+"");
+        _key.replace('a',currentKey.charAt(0));
+        _key.replace('b',currentKey.charAt(1));
+        _key.replace('c',currentKey.charAt(2));
+        _key.replace('d',currentKey.charAt(3));
+        _key.replace('e',currentKey.charAt(4));
+        _key.replace('f',currentKey.charAt(5));
+        _key.replace('g',currentKey.charAt(6));
+        _key.replace('h',currentKey.charAt(7));
     }
 
 
@@ -121,7 +122,7 @@ public class ass2
                  value=s.next();
                  key=s.next();
             }
-            _key.put(key,value);
+            _key.put(key.charAt(0),value.charAt(0));
         }
         s.close();
     }
@@ -129,8 +130,8 @@ public class ass2
     private static String useKeyOn(String textToUseWithKey){
         String toReturn="";
         for(int j=0;j<textToUseWithKey.length();j++){
-            if(_key.containsKey(textToUseWithKey.charAt(j)+"")){
-                toReturn=toReturn.concat(_key.get(textToUseWithKey.charAt(j)+""));
+            if(_key.containsKey(textToUseWithKey.charAt(j))){
+                toReturn=toReturn.concat(_key.get(textToUseWithKey.charAt(j))+"");
             }
             else{
                 toReturn= toReturn.concat(textToUseWithKey.charAt(j)+"");
@@ -180,14 +181,14 @@ public class ass2
 
     private static String XOR_AB(String A, String B) throws UnsupportedEncodingException {
 
-        byte[] a = A.getBytes("UTF-8");
-        byte[] b= B.getBytes("UTF-8");
+        byte[] a = A.getBytes("ASCII");
+        byte[] b= B.getBytes("ASCII");
         int min = Math.min(a.length,b.length);
         byte[] ABxor= new byte[min];
         for (int i=0 ;i<min;i++ ) {
             ABxor[i] = (byte)(a[i] ^ b[i]);
         }
-       return new String(ABxor,"UTF-8");
+       return new String(ABxor,"ASCII");
         }
 
 
@@ -197,7 +198,7 @@ public class ass2
             throws IOException
     {
         byte[] encoded = Files.readAllBytes(Paths.get("."+path));
-        return new String(encoded, StandardCharsets.UTF_8);
+        return new String(encoded, StandardCharsets.US_ASCII);
     }
     private static void LoadDictionary()throws IOException{
         String DictContent=readFile("\\Dict\\dictionary.txt");
@@ -224,20 +225,20 @@ public class ass2
             }
         }
         for (int i = 0 ; i<to_decipher.length();i=i+10){
-            currentBlock= to_decipher.substring(i, i + 10);
-            decipheredTextBlock= useKeyOn(currentBlock);
-            if(i==0){
-                PlainTextAfterXor =XOR_AB(decipheredTextBlock,_iv);
-            }
-            else{
-                PlainTextAfterXor= XOR_AB(Prev_undecipheredBlock,decipheredTextBlock);
-            }
-            Prev_undecipheredBlock=new String(currentBlock);
-            deCipheredText=deCipheredText.concat(PlainTextAfterXor);
-        }
-        return deCipheredText;
-    
+    currentBlock= to_decipher.substring(i, i + 10);
+    decipheredTextBlock= useKeyOn(currentBlock);
+    if(i==0){
+        PlainTextAfterXor =XOR_AB(decipheredTextBlock,_iv);
     }
+    else{
+        PlainTextAfterXor= XOR_AB(Prev_undecipheredBlock,decipheredTextBlock);
+    }
+    Prev_undecipheredBlock=new String(currentBlock);
+    deCipheredText=deCipheredText.concat(PlainTextAfterXor);
+}
+        return deCipheredText;
+
+}
     public static void main (String[] args)throws IOException{
 
         for (int n = 0; n < args.length; n++)
