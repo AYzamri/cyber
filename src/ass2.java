@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -18,12 +18,12 @@ public class ass2
     private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
     private static Set _dictionary=new HashSet<String>();
     private static Map<Character,Character> _key=new HashMap<Character,Character>();
-    private static String _iv;
+    private static byte [] _iv;
     private static String _outputPath;
     private static void runAlgorithm(String algo)throws IOException{
     //run algorithem sub_cbc_10
         if(algo.equals("sub_cbc_10")){
-            _iv=readFile(_flags.get("-v"));
+            _iv=readFile_bytes(_flags.get("-v"));
             _outputPath="."+_flags.get("-o");
             if(_flags.get("-c").equals("encryption")){
                 getKey(true);
@@ -32,7 +32,7 @@ public class ass2
 
             else if(_flags.get("-c").equals("decryption")){
                 getKey(false);
-                String toWrite=run_CBC10_DecryptionAction(readFile(_flags.get("-t")));
+                String toWrite=run_CBC10_DecryptionAction(readFile_bytes(_flags.get("-t")));
                 writeOutput(toWrite);
             }
             else if(_flags.get("-c").equals("attack")){
@@ -127,44 +127,53 @@ public class ass2
         s.close();
     }
     //uses the key in order to encrypt/decrypt
-    private static String useKeyOn(String textToUseWithKey){
-        String toReturn="";
-        for(int j=0;j<textToUseWithKey.length();j++){
-            if(_key.containsKey(textToUseWithKey.charAt(j))){
-                toReturn=toReturn.concat(_key.get(textToUseWithKey.charAt(j))+"");
+    private static byte[] useKeyOn(byte[] textToUseWithKey){
+        byte[] toReturn=new byte[10];
+        byte currentByte=0;
+        for(int j=0;j<textToUseWithKey.length;j++){
+            if(_key.containsKey((char)textToUseWithKey[j])){
+                currentByte=(byte)(_key.get((char)textToUseWithKey[j])&0x00FF);
             }
             else{
-                toReturn= toReturn.concat(textToUseWithKey.charAt(j)+"");
+                currentByte=textToUseWithKey[j] ;
             }
+            toReturn[j]=currentByte;
         }
         return toReturn;
     }
     private static void run_CBC10_EncryptionAction() throws IOException {
 
-        String PlainText = readFile(_flags.get("-t"));
-        String currentBlock ;
-        String cipherTextBlock="" ;
-        String PlainTextAfterXor;
+        byte [] PlainText = readFile_bytes(_flags.get("-t"));
+        byte [] currentBlock=new byte[10] ;
+        byte [] cipherTextBlock=new byte[10] ;
+        byte [] PlainTextAfterXor;
+        byte [] FullPlainText;
         String CipheredText= "";
-        int check= PlainText.length()%10;
+        int check= PlainText.length%10;
         if(check>0){
-            for (int i=0 ; i<(10-check);i++)
+           FullPlainText=new byte[PlainText.length+(10-check)];
+            for (int i=0 ; i<FullPlainText.length;i++)
             {
-                char zero = (char)0;
-                PlainText=PlainText+zero;
+                if(i<PlainText.length){
+                    FullPlainText[i]=PlainText[i];
+                }
+                else
+                    FullPlainText[i]=(byte)0&0x00FF;
             }
         }
-        for (int i = 0 ; i<PlainText.length();i=i+10){
-                currentBlock= PlainText.substring(i, i + 10);
+        else
+            FullPlainText=PlainText;
+        for (int i = 0 ; i<FullPlainText.length;i=i+10){
+                 System.arraycopy(FullPlainText,i,currentBlock,0,10);
                 if(i==0){
                     PlainTextAfterXor =XOR_AB(currentBlock,_iv);
                 }
                 else
                     PlainTextAfterXor= XOR_AB(currentBlock,cipherTextBlock);
             cipherTextBlock= useKeyOn(PlainTextAfterXor);
-            CipheredText=CipheredText.concat(cipherTextBlock);
+            String currentBlockString=new String(cipherTextBlock,"ASCII");
+            CipheredText=CipheredText.concat(currentBlockString);
         }
-
          writeOutput(CipheredText);
     }
 
@@ -179,29 +188,41 @@ public class ass2
 
     }
 
-    private static String XOR_AB(String A, String B) throws UnsupportedEncodingException {
+    private static byte[] XOR_AB(byte[] A, byte[] B) throws UnsupportedEncodingException {
 
-        byte[] a = A.getBytes("ASCII");
-        byte[] b= B.getBytes("ASCII");
-        int min = Math.min(a.length,b.length);
+
+        int min = Math.min(A.length,B.length);
         byte[] ABxor= new byte[min];
         for (int i=0 ;i<min;i++ ) {
-            ABxor[i] = (byte)(a[i] ^ b[i]);
+            ABxor[i] = (byte)(A[i] ^ B[i]);
         }
-       return new String(ABxor,"ASCII");
+       return  ABxor;
         }
 
 
 
 
-    private static String readFile(String path)
+    private static byte[] readFile_bytes(String path)
+            throws IOException
+    {
+        Path filePath = Paths.get(path);
+        byte[] encoded = Files.readAllBytes(filePath);
+        return  encoded;
+    }
+
+    private static String readFile_string(String path)
             throws IOException
     {
         byte[] encoded = Files.readAllBytes(Paths.get("."+path));
-        return new String(encoded, StandardCharsets.US_ASCII);
+        return new String(encoded, "ASCII");
+
     }
+
+
+
+
     private static void LoadDictionary()throws IOException{
-        String DictContent=readFile("\\Dict\\dictionary.txt");
+        String DictContent=readFile_string("\\Dict\\dictionary.txt");
         Scanner scan = new Scanner(DictContent);
         while(scan.hasNext()){
             _dictionary.add(scan.next());
@@ -210,21 +231,21 @@ public class ass2
     }
 
 
-    private static String run_CBC10_DecryptionAction(String to_decipher)throws IOException {
-        String currentBlock ;
-        String decipheredTextBlock="" ;
-        String Prev_undecipheredBlock="";
-        String PlainTextAfterXor;
+    private static String run_CBC10_DecryptionAction(byte [] to_decipher)throws IOException {
+        byte [] currentBlock ;
+        byte [] decipheredTextBlock ;
+        byte [] Prev_undecipheredBlock;
+        byte [] PlainTextAfterXor;
         String deCipheredText= "";
-        int check= to_decipher.length()%10;
+        /*int check= to_decipher.length()%10;
         if(check>0){
             for (int i=0 ; i<(10-check);i++)
             {
                 char zero = (char)0;
                 to_decipher=to_decipher+zero;
             }
-        }
-        for (int i = 0 ; i<to_decipher.length();i=i+10){
+        }*/
+        for (int i = 0 ; i<to_decipher.length;i=i+10){
     currentBlock= to_decipher.substring(i, i + 10);
     decipheredTextBlock= useKeyOn(currentBlock);
     if(i==0){
