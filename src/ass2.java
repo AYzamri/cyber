@@ -42,7 +42,10 @@ public class ass2
                 writeOutput(toWrite);
             }
             else if(_flags.get("-c").equals("attack")){
-                run_CBC10_AttackAction();
+                if(algo.equals("sub_cbc_10")) {
+                    run_CBC10_AttackAction();
+                } else
+                    run_CBC52_AttackAction();
             }
             else{
                 System.out.println("Please enter valid value for action in subs_cbc_10");
@@ -102,6 +105,24 @@ public class ass2
         WriteKeyToFile(zamrial);
 
     }
+
+
+    private static void run_CBC52_AttackAction()  throws IOException{
+
+        byte[] knownPlainText = (readFile_bytes(_flags.get("-kp")));
+        byte [] knownCiphertext = (readFile_bytes(_flags.get("-kc")));
+
+
+    }
+
+
+
+
+
+
+
+
+
 
     private static void WriteKeyToFile (Map<Character,Character> keyToWrite) throws IOException {
         String sringush="";
