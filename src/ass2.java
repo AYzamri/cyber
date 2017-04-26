@@ -15,7 +15,7 @@ import java.util.*;
 public class ass2
 {
     private static Map<String,String> _flags = new HashMap<String,String>();
-    private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
+    private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o","-kp","-kc"));
     private static Set _dictionary=new HashSet<String>();
     private static Map<Character,Character> _key=new HashMap<Character,Character>();
     private static byte [] _iv;
@@ -23,14 +23,14 @@ public class ass2
     private static int Block_Size;
     private static void runAlgorithm(String algo)throws IOException{
     //run algorithem sub_cbc_10
-        if(algo.equals("sub_cbc_10") ||algo.equals("sub_cbc_52" )){
+        if(algo.equals("sub_cbc_10") ||algo.equals("sub_cbc_52" )){  // set the block size
             if(algo.equals("sub_cbc_10")) {
                 Block_Size = 10;
             }
             else
                 Block_Size=8128;
-            _iv=readFile_bytes(_flags.get("-v"));
-            _outputPath="."+_flags.get("-o");
+            _iv=readFile_bytes(_flags.get("-v")); // set the IV
+            _outputPath="."+_flags.get("-o"); // sey the Out put path
             if(_flags.get("-c").equals("encryption")){
                 getKey(true);
                 EncryptionAction();
@@ -111,6 +111,17 @@ public class ass2
 
         byte[] knownPlainText = (readFile_bytes(_flags.get("-kp")));
         byte [] knownCiphertext = (readFile_bytes(_flags.get("-kc")));
+        Map<Character,Character> PartialKey = new HashMap<>();
+        byte [] partialyCiphered =XOR_AB(knownPlainText,_iv);
+        for(int i=0;i<partialyCiphered.length;i++){
+            char key=(char)partialyCiphered[i];
+            char value=(char)knownCiphertext[i];
+            if(key>= 65&& key<=90||key>= 97&& key<=122){
+                PartialKey.put(key,value);
+            }
+
+        }
+
 
 
     }
