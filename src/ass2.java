@@ -15,7 +15,7 @@ import java.util.*;
 public class ass2
 {
     private static Map<String,String> _flags = new HashMap<String,String>();
-    private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o"));
+    private static Set _flagsWithValues = new HashSet<String>(Arrays.asList("-a","-c","-t","-k","-v","-o","kp","kc"));
     private static Set _dictionary=new HashSet<String>();
     private static Map<Character,Character> _key=new HashMap<Character,Character>();
     private static byte [] _iv;
