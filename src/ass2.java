@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,19 +20,25 @@ public class ass2
     private static Map<Character,Character> _key=new HashMap<Character,Character>();
     private static byte [] _iv;
     private static String _outputPath;
+    private static int Block_Size;
     private static void runAlgorithm(String algo)throws IOException{
     //run algorithem sub_cbc_10
-        if(algo.equals("sub_cbc_10")){
+        if(algo.equals("sub_cbc_10") ||algo.equals("sub_cbc_52" )){
+            if(algo.equals("sub_cbc_10")) {
+                Block_Size = 10;
+            }
+            else
+                Block_Size=8128;
             _iv=readFile_bytes(_flags.get("-v"));
             _outputPath="."+_flags.get("-o");
             if(_flags.get("-c").equals("encryption")){
                 getKey(true);
-                run_CBC10_EncryptionAction();
+                EncryptionAction();
             }
 
             else if(_flags.get("-c").equals("decryption")){
                 getKey(false);
-                String toWrite=run_CBC10_DecryptionAction(readFile_bytes(_flags.get("-t")));
+                String toWrite= DecryptionAction(readFile_bytes(_flags.get("-t")));
                 writeOutput(toWrite);
             }
             else if(_flags.get("-c").equals("attack")){
@@ -64,7 +69,7 @@ public class ass2
         int counter=0;
         for (String currentKey:SetOfKeys) {
             setDecryptor(currentKey);
-            String deCipherToCheck=run_CBC10_DecryptionAction(PartOfCipheredText);
+            String deCipherToCheck= DecryptionAction(PartOfCipheredText);
             int counterWordsInDict=0;
             int totalWords=0;
             String[] decipheredTextSplited = deCipherToCheck.split("[\\.,\\s!;?:&\"\\[\\]]+");
@@ -157,8 +162,8 @@ public class ass2
         s.close();
     }
     //uses the key in order to encrypt/decrypt
-    private static byte[] useKeyOn(byte[] textToUseWithKey){
-        byte[] toReturn=new byte[10];
+    private static byte[] useKeyOn(byte[] textToUseWithKey, int Block_Size){
+        byte[] toReturn=new byte[Block_Size];
         byte currentByte=0;
         for(int j=0;j<textToUseWithKey.length;j++){
             if(_key.containsKey((char)textToUseWithKey[j])){
@@ -171,17 +176,17 @@ public class ass2
         }
         return toReturn;
     }
-    private static void run_CBC10_EncryptionAction() throws IOException {
+    private static void EncryptionAction() throws IOException {
 
         byte [] PlainText = readFile_bytes(_flags.get("-t"));
-        byte [] currentBlock=new byte[10] ;
-        byte [] cipherTextBlock=new byte[10] ;
+        byte [] currentBlock=new byte[Block_Size] ;
+        byte [] cipherTextBlock=new byte[Block_Size] ;
         byte [] PlainTextAfterXor;
         byte [] FullPlainText;
         String CipheredText= "";
-        int check= PlainText.length%10;
+        int check= PlainText.length%Block_Size;
         if(check>0){
-           FullPlainText=new byte[PlainText.length+(10-check)];
+           FullPlainText=new byte[PlainText.length+(Block_Size-check)];
             for (int i=0 ; i<FullPlainText.length;i++)
             {
                 if(i<PlainText.length){
@@ -193,14 +198,14 @@ public class ass2
         }
         else
             FullPlainText=PlainText;
-        for (int i = 0 ; i<FullPlainText.length;i=i+10){
-                 System.arraycopy(FullPlainText,i,currentBlock,0,10);
+        for (int i = 0 ; i<FullPlainText.length;i=i+Block_Size){
+                 System.arraycopy(FullPlainText,i,currentBlock,0,Block_Size);
                 if(i==0){
                     PlainTextAfterXor =XOR_AB(currentBlock,_iv);
                 }
                 else
                     PlainTextAfterXor= XOR_AB(currentBlock,cipherTextBlock);
-            cipherTextBlock= useKeyOn(PlainTextAfterXor);
+            cipherTextBlock= useKeyOn(PlainTextAfterXor,Block_Size);
             String currentBlockString=new String(cipherTextBlock,"ASCII");
             CipheredText=CipheredText.concat(currentBlockString);
         }
@@ -261,16 +266,16 @@ public class ass2
     }
 
 
-    private static String run_CBC10_DecryptionAction(byte [] to_decipher)throws IOException {
-        byte [] currentBlock=new byte[10] ;
+    private static String DecryptionAction(byte [] to_decipher)throws IOException {
+        byte [] currentBlock=new byte[Block_Size] ;
         byte [] decipheredTextBlock ;
-        byte [] Prev_undecipheredBlock=new byte[10];
+        byte [] Prev_undecipheredBlock=new byte[Block_Size];
         byte [] PlainTextAfterXor;
         byte [] FullCipheredText;
         String deCipheredText= "";
-        int check= to_decipher.length%10;
+        int check= to_decipher.length%Block_Size;
         if(check>0){
-            FullCipheredText=new byte[to_decipher.length+(10-check)];
+            FullCipheredText=new byte[to_decipher.length+(Block_Size-check)];
             for (int i=0 ; i<FullCipheredText.length;i++)
             {
                 if(i<to_decipher.length){
@@ -283,9 +288,9 @@ public class ass2
         else
             FullCipheredText=to_decipher;
 
-        for (int i = 0 ; i<FullCipheredText.length;i=i+10){
-            System.arraycopy(FullCipheredText,i,currentBlock,0,10);
-            decipheredTextBlock= useKeyOn(currentBlock);
+        for (int i = 0 ; i<FullCipheredText.length;i=i+Block_Size){
+            System.arraycopy(FullCipheredText,i,currentBlock,0,Block_Size);
+            decipheredTextBlock= useKeyOn(currentBlock,Block_Size);
              if(i==0){
                 PlainTextAfterXor =XOR_AB(decipheredTextBlock,_iv);
             }
@@ -293,7 +298,7 @@ public class ass2
                   PlainTextAfterXor= XOR_AB(Prev_undecipheredBlock,decipheredTextBlock);
                 }
 
-            System.arraycopy(currentBlock,0,Prev_undecipheredBlock,0,10);
+            System.arraycopy(currentBlock,0,Prev_undecipheredBlock,0,Block_Size);
             deCipheredText=deCipheredText.concat(new String(PlainTextAfterXor,"ASCII"));
         }
         return deCipheredText;
