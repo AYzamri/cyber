@@ -126,6 +126,52 @@ public class ass2
         cbc52Attack=true;
 
         String glyze=DecryptionAction(readFile_bytes(_flags.get("-t")));
+        
+        
+        String currentWord="";
+        Set<Character> currentExistingChars=_key.keySet();
+        Set<Character> charsThatAreValuesInKey=getValuesForKey();
+        int counterOfUnkownCharsDecrypt=0;
+        char charectorToFind;
+        int currentCharToFindIndex=0;
+        for(int i=0;i<glyze.length();i++){
+            //check if contains a character that cannot be decrypted by the partialKey -count and save
+            if(currentExistingChars.contains(glyze.charAt(i))==false&&glyze.charAt(i)>= 65&& glyze.charAt(i)<=90||glyze.charAt(i)>= 97&& glyze.charAt(i)<=122){
+                counterOfUnkownCharsDecrypt++;
+                charectorToFind=glyze.charAt(i);
+                currentCharToFindIndex=i;
+            }
+            //reached end of word
+            if(glyze.charAt(i)=='['||glyze.charAt(i)=='\n'||glyze.charAt(i)=='\r'||glyze.charAt(i)==']'){
+                //if more than one missing and word is too short continue;
+                if(counterOfUnkownCharsDecrypt>1||currentWord.length()<3){
+                    counterOfUnkownCharsDecrypt=0;
+                    currentWord="";
+                    currentCharToFindIndex=0;
+                    continue;
+                }
+                else{
+                    //start checking possible options for the char to find.
+                    
+                
+                
+                
+                }
+            
+            
+            }
+            else{
+                currentWord+=glyze.charAt(i);
+            }
+            
+            
+            
+        }
+        
+        
+        
+        /*
+        
         String[] decipheredTextSplited = glyze.split("[\\.,\\s!;?:&\"\\[\\]]+");
 
         for(int j=0;j<decipheredTextSplited.length;j++){
@@ -150,7 +196,7 @@ public class ass2
 
 
 
-        }
+        }*/
 
 
 
@@ -161,16 +207,19 @@ public class ass2
 
 
     }
-
-
-
-
-
-
-
-
-
-
+    
+    private static Set<Character> getValuesForKey()
+    {
+       String valuesString=_key.values().toArray().toString();
+       Set<Character> values=new HashSet<Character>();
+       for(int j=0;j<valuesString.length();j++){
+           
+           values.add(valuesString.charAt(j));
+       }
+       return values;
+       
+    }
+    
     private static void WriteKeyToFile (Map<Character,Character> keyToWrite) throws IOException {
         String sringush="";
         for (Character c:keyToWrite.keySet()) {
