@@ -108,106 +108,95 @@ public class ass2
     }
 
 
-    private static void run_CBC52_AttackAction()  throws IOException{
+    private static void run_CBC52_AttackAction()  throws IOException {
 
         byte[] knownPlainText = (readFile_bytes(_flags.get("-kp")));
-        byte [] knownCiphertext = (readFile_bytes(_flags.get("-kc")));
-        Map<Character,Character> PartialDecryptKey = new HashMap<>();
-        byte [] partialyCiphered =XOR_AB(knownPlainText,_iv);
-        for(int i=0;i<partialyCiphered.length;i++){
-            char value=(char)partialyCiphered[i];
-            char key=(char)knownCiphertext[i];
-            if(key>= 65&& key<=90||key>= 97&& key<=122){
-                PartialDecryptKey.put(key,value);
+        byte[] knownCiphertext = (readFile_bytes(_flags.get("-kc")));
+        Map<Character, Character> PartialDecryptKey = new HashMap<>();
+        byte[] partialyCiphered = XOR_AB(knownPlainText, _iv);
+        for (int i = 0; i < partialyCiphered.length; i++) {
+            char value = (char) partialyCiphered[i];
+            char key = (char) knownCiphertext[i];
+            if (key >= 65 && key <= 90 || key >= 97 && key <= 122) {
+                PartialDecryptKey.put(key, value);
             }
 
         }
-        _key=PartialDecryptKey;
-        cbc52Attack=true;
+        _key = PartialDecryptKey;
+        cbc52Attack = true;
+        byte[] partialyDecryptedText_bytes = readFile_bytes(_flags.get("-t"));
+        String partialyDecryptedText_string = DecryptionAction(partialyDecryptedText_bytes);
+        Set<Character> endOfWordChars = new HashSet<Character>(Arrays.asList(';','[',',',']',')','(','.',':','\n','\r'));
 
-        String glyze=DecryptionAction(readFile_bytes(_flags.get("-t")));
-        
-        
-        String currentWord="";
-        Set<Character> currentExistingChars=_key.keySet();
-        Set<Character> charsThatAreValuesInKey=getValuesForKey();
-        int counterOfUnkownCharsDecrypt=0;
-        char charectorToFind;
-        int currentCharToFindIndex=0;
-        for(int i=0;i<glyze.length();i++){
+
+        String currentWord = "";
+        Set<Character> currentExistingKeysInDecryptor = _key.keySet();
+        Set<Character> currentExistingValuesInDecryptor = getValuesForKey();
+        int counterOfUnkownCharsDecrypt = 0;
+        char currentUnknownChar=' ';
+        int currentCharToFindIndex = 0;
+        for (int i = 0; i < partialyDecryptedText_string.length(); i++) {
             //check if contains a character that cannot be decrypted by the partialKey -count and save
-            if(currentExistingChars.contains(glyze.charAt(i))==false&&glyze.charAt(i)>= 65&& glyze.charAt(i)<=90||glyze.charAt(i)>= 97&& glyze.charAt(i)<=122){
+            if (currentExistingKeysInDecryptor.contains(partialyDecryptedText_string.charAt(i)) == false && (partialyDecryptedText_string.charAt(i) >= 65 && partialyDecryptedText_string.charAt(i) <= 90 || partialyDecryptedText_string.charAt(i) >= 97 && partialyDecryptedText_string.charAt(i) <= 122)) {
                 counterOfUnkownCharsDecrypt++;
-                charectorToFind=glyze.charAt(i);
-                currentCharToFindIndex=i;
+                currentUnknownChar = partialyDecryptedText_string.charAt(i);
+                currentCharToFindIndex = i;
             }
             //reached end of word
-            if(glyze.charAt(i)=='['||glyze.charAt(i)=='\n'||glyze.charAt(i)=='\r'||glyze.charAt(i)==']'){
+            if (endOfWordChars.contains(partialyDecryptedText_string.charAt(i))) {
                 //if more than one missing and word is too short continue;
-                if(counterOfUnkownCharsDecrypt>1||currentWord.length()<3){
-                    counterOfUnkownCharsDecrypt=0;
-                    currentWord="";
-                    currentCharToFindIndex=0;
+                if (counterOfUnkownCharsDecrypt > 1 || currentWord.length() < 3 || currentWord.matches(".*\\d.*") ) {
+                    counterOfUnkownCharsDecrypt = 0;
+                    currentWord = "";
+                    currentCharToFindIndex = 0;
                     continue;
-                }
-                else{
+                } else {
+                    // get the char from prev block
+                    byte CharFromPrevBlock;
+                    if (currentCharToFindIndex < 8128) {
+                        CharFromPrevBlock = _iv[currentCharToFindIndex];
+                    } else {
+                        CharFromPrevBlock = partialyDecryptedText_bytes[currentCharToFindIndex - 8128];
+                    }
                     //start checking possible options for the char to find.
-                    
-                
-                
-                
+                    char[] optionalWord = currentWord.toLowerCase().toCharArray();
+                    int countCharMatched = 0;
+                    char charAfterXor;
+                    for (char c = 'a'; c < 'z'; c++) {
+                        optionalWord[currentCharToFindIndex] = c;
+                        String optionalWordAsString = String.valueOf(optionalWord);
+                        if (_dictionary.contains(optionalWordAsString)) {
+
+                            byte ByteAfterXor = (byte) (((byte) c) ^ CharFromPrevBlock);
+                            charAfterXor = (char) ByteAfterXor;
+                            if (currentExistingValuesInDecryptor.contains(charAfterXor))
+                                continue;
+                            else {
+                                countCharMatched++;
+                                if (countCharMatched > 1)
+                                    break;
+                            }
+                            if (countCharMatched == 1) {
+                                _key.put(currentUnknownChar, charAfterXor);
+                                currentExistingKeysInDecryptor.add(currentUnknownChar);
+                                currentExistingValuesInDecryptor.add(charAfterXor);
+                            }
+                        }
+                    }
+                    counterOfUnkownCharsDecrypt = 0;
+                    currentWord = "";
+                    currentCharToFindIndex = 0;
                 }
-            
-            
             }
             else{
-                currentWord+=glyze.charAt(i);
-            }
-            
-            
-            
-        }
-        
-        
-        
-        /*
-        
-        String[] decipheredTextSplited = glyze.split("[\\.,\\s!;?:&\"\\[\\]]+");
-
-        for(int j=0;j<decipheredTextSplited.length;j++){
-            String currentWord=decipheredTextSplited[j];
-            if(currentWord.matches(".*\\d.*")&&currentWord.length()<3){
-                continue;
-            }
-            int counterCharInKey=0;
-            for (int i=0;i<currentWord.length();i++) {
-
-                if(_key.containsKey(currentWord.charAt(i))){
-                    counterCharInKey++;
+                    currentWord += partialyDecryptedText_string.charAt(i);
                 }
             }
-            if((currentWord.length()-counterCharInKey)==1){
-
-
-
-            }
-
-
-
-
-
-        }*/
-
-
-
-
-
-
-
-
-
     }
-    
+
+
+
+
     private static Set<Character> getValuesForKey()
     {
        String valuesString=_key.values().toArray().toString();
