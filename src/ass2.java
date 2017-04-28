@@ -133,33 +133,39 @@ public class ass2
         String currentWord = "";
         Set<Character> currentExistingKeysInDecryptor = new HashSet<>(_key.keySet());
         Set<Character> currentExistingValuesInDecryptor = new HashSet<>(getValuesForKey());
-        int counterOfUnkownCharsDecrypt = 0;
+        int counterOfUnknownCharsDecrypt = 0;
         int IndexCharToFindInWord=0;
         int countWordLength=0;
         char currentUnknownChar=' ';
         int IndexCharToFindInMainString = 0;
-        for(int j = 0 ; j< 1;j++) {
+        //goes over the entire string twice.
+        for(int j = 0 ; j< 2;j++) {
+            //if finished finding all keys->stop
             if (currentExistingKeysInDecryptor.size() == 52)
                 break;
             for (int i = 0; i < partialyDecryptedText_string.length(); i++) {
+                //if finished finding all keys->stop
+                if(i==8277)
+                    i=i;
                 if (currentExistingKeysInDecryptor.size() == 52)
                     break;
                 //check if contains a character that cannot be decrypted by the partialKey -count and save
                 if (setOfIndexes.contains(i)) { // the legal range checked in useKey func
-                    counterOfUnkownCharsDecrypt++;
-                    currentUnknownChar = partialyDecryptedText_string.charAt(i);
+                    counterOfUnknownCharsDecrypt++;
+                    currentUnknownChar =(char) (partialyDecryptedText_bytes[i]&0xFF);
                     IndexCharToFindInMainString = i;
                     IndexCharToFindInWord = countWordLength;
                 }
                 //reached end of word
                 if (endOfWordChars.contains(partialyDecryptedText_string.charAt(i))) {
                     //if more than one missing and word is too short continue;
-                    if (counterOfUnkownCharsDecrypt != 1 || currentWord.length() < 3 || currentWord.matches(".*\\d.*")) {
-                        counterOfUnkownCharsDecrypt = 0;
+                    if (counterOfUnknownCharsDecrypt != 1 || currentWord.length() < 3 || currentWord.matches(".*\\d.*")) {
+                        counterOfUnknownCharsDecrypt = 0;
                         currentWord = "";
                         IndexCharToFindInMainString = 0;
                         IndexCharToFindInWord = 0;
                         countWordLength = 0;
+                        currentUnknownChar=' ';
                         continue;
                     } else {
                         // get the char from prev block
@@ -167,7 +173,7 @@ public class ass2
                         if (IndexCharToFindInMainString < 8128) {
                             CharFromPrevBlock = _iv[IndexCharToFindInMainString];
                         } else {
-                            CharFromPrevBlock = partialyDecryptedText_bytes[IndexCharToFindInMainString - 8128+1];///+1 ??
+                            CharFromPrevBlock = partialyDecryptedText_bytes[IndexCharToFindInMainString - 8128];
                         }
                         //start checking possible options for the char to find.
                         char[] optionalWord = currentWord.toLowerCase().toCharArray();
@@ -175,36 +181,36 @@ public class ass2
                         char charAfterXorLowerCase=' ';
                         boolean foundCharInUpper=false;
                         char charAfterXorUpper=' ';
+                        //try every letter that can switch the currentLetter
                         for (char c = 'a'; c <= 'z'; c++) {
+                            /*
                             if(IndexCharToFindInWord>=optionalWord.length)
                                 charAfterXorUpper=' ';
+                                */
                             optionalWord[IndexCharToFindInWord] = c;
                             String optionalWordAsString = String.valueOf(optionalWord);
+                            //check if the new word is real
                             if (_dictionary.contains(optionalWordAsString)) {
-                                byte ByteAfterXorUpperrCase;
+                                byte ByteAfterXorUpperCase;
+                                /*
                                  charAfterXorUpper = ' ';
                                  foundCharInUpper = false;
+                                 */
                                  byte cb=(byte)(c&0x00FF);
                                 byte ByteAfterXorLowerCase = (byte) ((cb) ^ CharFromPrevBlock);
                                 charAfterXorLowerCase = (char) ByteAfterXorLowerCase;
-                                if(charAfterXorLowerCase=='}'&&currentUnknownChar=='Z'){
-                                    int dan=0;
-                                }
                                 if (IndexCharToFindInWord == 0) {
-                                    ByteAfterXorUpperrCase = (byte) ((cb - 32) ^ CharFromPrevBlock);
-                                    charAfterXorUpper = (char) ByteAfterXorUpperrCase;
-                                    if (!(currentExistingValuesInDecryptor.contains(charAfterXorUpper))&&((charAfterXorUpper >= 65 && charAfterXorUpper <= 90) || (charAfterXorUpper >= 97 && charAfterXorUpper <= 122))) {
+                                    ByteAfterXorUpperCase = (byte) ((cb - 32) ^ CharFromPrevBlock);
+                                    charAfterXorUpper = (char) ByteAfterXorUpperCase;
+                                    if (!(currentExistingValuesInDecryptor.contains(charAfterXorUpper))&&(isLegalChar(charAfterXorUpper))) {
                                         countCharMatched++;
                                         foundCharInUpper = true;
-                                    }
-                                    if(charAfterXorUpper=='}'&&currentUnknownChar=='Z'){
-                                        int zamriel=0;
                                     }
                                 }
                                 if (currentExistingValuesInDecryptor.contains(charAfterXorLowerCase) && foundCharInUpper == false)
                                     continue;
                                 else {
-                                    if (!(currentExistingValuesInDecryptor.contains(charAfterXorLowerCase))&&((charAfterXorLowerCase >= 65 && charAfterXorLowerCase <= 90) || (charAfterXorLowerCase >= 97 && charAfterXorLowerCase <= 122)))
+                                    if (!(currentExistingValuesInDecryptor.contains(charAfterXorLowerCase))&&(isLegalChar(charAfterXorLowerCase)))
                                         countCharMatched++;
                                     if (countCharMatched > 1)
                                         break;
@@ -212,23 +218,25 @@ public class ass2
 
                             }
                         }
-                        if (countCharMatched == 1) {
-                            if((charAfterXorLowerCase=='}'||charAfterXorUpper=='}')&&currentUnknownChar=='X'){
-                                int dan=0;
-                            }
+                        if (countCharMatched == 1&&!currentExistingKeysInDecryptor.contains(currentUnknownChar)) {
                             if (foundCharInUpper) {
-                                _key.put(currentUnknownChar, charAfterXorUpper);
-                                currentExistingKeysInDecryptor.add(currentUnknownChar);
-                                currentExistingValuesInDecryptor.add(charAfterXorUpper);
-                            } else {
-                                _key.put(currentUnknownChar, charAfterXorLowerCase);
-                                currentExistingKeysInDecryptor.add(currentUnknownChar);
-                                currentExistingValuesInDecryptor.add(charAfterXorLowerCase);
-                            }
+                                if(isLegalChar(charAfterXorUpper)){
+                                    _key.put(currentUnknownChar, charAfterXorUpper);
+                                    currentExistingKeysInDecryptor.add(currentUnknownChar);
+                                    currentExistingValuesInDecryptor.add(charAfterXorUpper);
+                                }
 
+                            } else {
+                                if(isLegalChar(charAfterXorLowerCase)){
+                                    _key.put(currentUnknownChar, charAfterXorLowerCase);
+                                    currentExistingKeysInDecryptor.add(currentUnknownChar);
+                                    currentExistingValuesInDecryptor.add(charAfterXorLowerCase);
+                                }
+
+                            }
                         }
                         countCharMatched=0;
-                        counterOfUnkownCharsDecrypt = 0;
+                        counterOfUnknownCharsDecrypt = 0;
                         currentWord = "";
                         IndexCharToFindInMainString = 0;
                         IndexCharToFindInWord = 0;
@@ -236,15 +244,22 @@ public class ass2
                         continue;
                     }
                 }
-                currentWord += partialyDecryptedText_string.charAt(i);
-                countWordLength++;
+                else{
+                    currentWord += partialyDecryptedText_string.charAt(i);
+                    countWordLength++;
+                }
+
             }
         }
         getTheKey();
         WriteKeyToFile(_key);
     }
 
-
+private static boolean isLegalChar(char c){
+        if((c >= 65 && c <= 90) || (c >= 97 && c <= 122))
+            return true;
+        return false;
+}
 
 
     private static Set<Character> getValuesForKey()
@@ -336,7 +351,7 @@ public class ass2
             else{
                 currentByte=textToUseWithKey[j];
                 char currentChar = (char)currentByte;
-                if(cbc52Attack && (currentChar >= 65 && currentChar <= 90) || (currentChar >= 97 && currentChar <= 122)){
+                if(cbc52Attack && (isLegalChar(currentChar))){
                     setOfIndexes.add(indexOfChar);
                 }
             }
@@ -402,7 +417,7 @@ public class ass2
                 ABxor[i] = (byte)(A[i] ^ B[i]);
             else{
                 char checkC=(char)A[i];
-                if(!_key.containsKey(checkC)&&checkC>= 65&& checkC<=90||checkC>= 97&& checkC<=122)
+                if(!_key.containsKey(checkC)&&isLegalChar(checkC))
                     ABxor[i]=A[i];
                 else{
                     ABxor[i] = (byte)(A[i] ^ B[i]);
@@ -473,7 +488,7 @@ public class ass2
                 PlainTextAfterXor =XOR_AB(decipheredTextBlock,_iv);
             }
             else{
-                  PlainTextAfterXor= XOR_AB(Prev_undecipheredBlock,decipheredTextBlock);
+                  PlainTextAfterXor= XOR_AB(decipheredTextBlock,Prev_undecipheredBlock);
                 }
 
             System.arraycopy(currentBlock,0,Prev_undecipheredBlock,0,Block_Size);
