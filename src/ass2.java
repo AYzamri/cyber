@@ -1,9 +1,6 @@
 import javafx.util.Pair;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,6 +21,40 @@ public class ass2
     private static boolean cbc52Attack=false;
     private static int indexOfChar =0;
     private static Set<Integer> setOfIndexes = new HashSet<>();
+    InputStream stream;
+
+    public ass2(String[] args) {
+
+        for (int n = 0; n < args.length; n++) {
+            if (args[n].charAt(0) == '-') {
+                String name = args[n];
+                String value = null;
+                if (_flagsWithValues.contains(args[n]) && n < args.length - 1)
+                    value = args[++n];
+                _flags.put(name, value);
+            }
+        }
+        URL url = getClass().getResource("dictionary.txt");
+        try {
+            stream= url.openStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Scanner scan = new Scanner(stream,"UTF-8");
+        while(scan.hasNext()){
+            _dictionary.add(scan.next());
+        }
+        scan.close();
+
+
+        try {
+            runAlgorithm(_flags.get("-a"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
     private static void runAlgorithm(String algo)throws IOException{
     //run algorithem sub_cbc_10
         if(algo.equals("sub_cbc_10") ||algo.equals("sub_cbc_52" )){  // set the block size
@@ -53,14 +84,12 @@ public class ass2
             else{
                 System.out.println("Please enter valid value for action in subs_cbc_10");
             }
-
         }
     }
-
     private static void run_CBC10_AttackAction()  throws IOException
     {
         int Sample_Size= 800;
-        LoadDictionary();
+      //  LoadDictionary();
         setKeys();
         //read first 500 in given file
         byte[] CipheredText = (readFile_bytes(_flags.get("-t")));
@@ -88,7 +117,6 @@ public class ass2
                     totalWords++;
                     continue;
                 }
-
 
                 if(totalWords>=0.5*lengthOfSplited&& totalWords > 5*counterWordsInDict){
                     break;
@@ -128,7 +156,7 @@ public class ass2
 
     private static void run_CBC52_AttackAction()  throws IOException {
         getPartialKey_CBC52();
-        LoadDictionary();
+    //    LoadDictionary();
         byte[] encryptedText_bytes = readFile_bytes(_flags.get("-t"));
      //   String partialyDecryptedText_string= DecryptionAction(encryptedText_bytes);
         Set<Character> endOfWordChars = new HashSet<Character>(Arrays.asList(';','[',',',']',')','(','.',':','\n','\r','?','-','/','!',' ','}','{','_','='));
@@ -288,7 +316,6 @@ byte[] encryptedText_bytes,String currentWord,char currentUnknownChar, Set<Chara
                     currentExistingKeysInDecryptor.add(currentUnknownChar);
                     currentExistingValuesInDecryptor.add(charAfterXorLowerCase);
                 }
-
             }
         }
     }
@@ -458,16 +485,7 @@ private static boolean isLegalChar(char c){
         int min = Math.min(A.length,B.length);
         byte[] ABxor= new byte[min];
         for (int i=0 ;i<min;i++ ) {
-            if(cbc52Attack==false)
                 ABxor[i] = (byte)(A[i] ^ B[i]);
-            else{
-                char checkC=(char)A[i];
-                if(!_key.containsKey(checkC)&&isLegalChar(checkC))
-                    ABxor[i]=A[i];
-                else{
-                    ABxor[i] = (byte)(A[i] ^ B[i]);
-                }
-            }
         }
        return  ABxor;
         }
@@ -490,20 +508,6 @@ private static boolean isLegalChar(char c){
         return new String(encoded, "ASCII");
 
     }
-
-
-
-
-    private static void LoadDictionary()throws IOException{
-        String DictContent=readFile_string("\\Dict\\dictionary.txt");
-        Scanner scan = new Scanner(DictContent);
-        while(scan.hasNext()){
-            _dictionary.add(scan.next());
-        }
-        scan.close();
-    }
-
-
     private static String DecryptionAction(byte [] to_decipher)throws IOException {
         byte [] currentBlock=new byte[Block_Size] ;
         byte [] decipheredTextBlock ;
@@ -541,23 +545,7 @@ private static boolean isLegalChar(char c){
         }
         return deCipheredText;
 }
-    public static void main (String[] args)throws IOException{
 
-        for (int n = 0; n < args.length; n++)
-        {
-            if (args[n].charAt(0) == '-')
-            {
-                String name = args[n];
-                String value = null;
-                if (_flagsWithValues.contains(args[n]) && n < args.length - 1)
-                    value = args[++n];
-                _flags.put(name, value);
-            }
-        }
-        runAlgorithm(_flags.get("-a"));
-
-
-    }
 
 /**********************/
 public static void permutation(String str, HashSet<String> s) {
