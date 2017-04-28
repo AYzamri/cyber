@@ -276,7 +276,7 @@ private static boolean isLegalChar(char c){
     private static void WriteKeyToFile (Map<Character,Character> keyToWrite) throws IOException {
         String sringush="";
         for (Character c:keyToWrite.keySet()) {
-            sringush=sringush+ (c + " " + keyToWrite.get(c) + "\n");
+            sringush=sringush+ (c + " " + keyToWrite.get(c) + "\r\n");
         }
         writeOutput(sringush);
     }
