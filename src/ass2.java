@@ -109,8 +109,7 @@ public class ass2
 
     }
 
-
-    private static void run_CBC52_AttackAction()  throws IOException {
+    private static void getPartialKey_CBC52() throws IOException {
 
         byte[] knownPlainText = (readFile_bytes(_flags.get("-kp")));
         byte[] knownCiphertext = (readFile_bytes(_flags.get("-kc")));
@@ -125,11 +124,14 @@ public class ass2
 
         }
         _key = PartialDecryptKey;
-        cbc52Attack = true;
+    }
+
+    private static void run_CBC52_AttackAction()  throws IOException {
+        getPartialKey_CBC52();
         LoadDictionary();
-        byte[] partialyDecryptedText_bytes = readFile_bytes(_flags.get("-t"));
-        String partialyDecryptedText_string = DecryptionAction(partialyDecryptedText_bytes);
-        Set<Character> endOfWordChars = new HashSet<Character>(Arrays.asList(';','[',',',']',')','(','.',':','\n','\r','?','-','/','!',' ','}','{','_'));
+        byte[] encryptedText_bytes = readFile_bytes(_flags.get("-t"));
+     //   String partialyDecryptedText_string= DecryptionAction(encryptedText_bytes);
+        Set<Character> endOfWordChars = new HashSet<Character>(Arrays.asList(';','[',',',']',')','(','.',':','\n','\r','?','-','/','!',' ','}','{','_','='));
         String currentWord = "";
         Set<Character> currentExistingKeysInDecryptor = new HashSet<>(_key.keySet());
         Set<Character> currentExistingValuesInDecryptor = new HashSet<>(getValuesForKey());
@@ -138,28 +140,48 @@ public class ass2
         int countWordLength=0;
         char currentUnknownChar=' ';
         int IndexCharToFindInMainString = 0;
+        char currentChar=' ';
+        byte ByteAfterXor=0;
         //goes over the entire string twice.
+
         for(int j = 0 ; j< 2;j++) {
             //if finished finding all keys->stop
             if (currentExistingKeysInDecryptor.size() == 52)
                 break;
-            for (int i = 0; i < partialyDecryptedText_string.length(); i++) {
+
+
+            for (int i = 0; i < encryptedText_bytes.length; i++) {
                 //if finished finding all keys->stop
-                if(i==8277)
-                    i=i;
+
                 if (currentExistingKeysInDecryptor.size() == 52)
                     break;
-                //check if contains a character that cannot be decrypted by the partialKey -count and save
-                if (setOfIndexes.contains(i)) { // the legal range checked in useKey func
+                //check if contains a character that cannot be decrypted by the partialKey -count and save ++Change++
+                currentChar =(char) (encryptedText_bytes[i]&0xFF); // ++change++
+                //the char is not in the decryption key
+                if (isLegalChar(currentChar)&&! _key.containsKey(currentChar) ) { // the legal range checked in useKey func //  setOfIndexes.contains(i)
                     counterOfUnknownCharsDecrypt++;
-                    currentUnknownChar =(char) (partialyDecryptedText_bytes[i]&0xFF);
+                    currentUnknownChar =currentChar;
                     IndexCharToFindInMainString = i;
                     IndexCharToFindInWord = countWordLength;
                 }
+                else{
+                    //add letter to currentWord after decryption
+                    byte ByteFromPrevBlock;
+                    if (i < 8128) {
+                        ByteFromPrevBlock = _iv[i];
+                    } else {
+                        ByteFromPrevBlock = encryptedText_bytes[i - 8128];
+                    }
+                    byte byteAfterDecrypt= encryptedText_bytes[i];
+                    if(_key.containsKey(currentChar)){
+                        byteAfterDecrypt=(byte)((char)_key.get(currentChar));
+                    }
+                     ByteAfterXor = (byte) (byteAfterDecrypt ^ ByteFromPrevBlock);
+                }
                 //reached end of word
-                if (endOfWordChars.contains(partialyDecryptedText_string.charAt(i))) {
+                if (endOfWordChars.contains((char)ByteAfterXor) ) {
                     //if more than one missing and word is too short continue;
-                    if (counterOfUnknownCharsDecrypt != 1 || currentWord.length() < 3 || currentWord.matches(".*\\d.*")) {
+                    if (counterOfUnknownCharsDecrypt != 1 || currentWord.length()<2|| currentWord.matches(".*\\d.*")) {
                         counterOfUnknownCharsDecrypt = 0;
                         currentWord = "";
                         IndexCharToFindInMainString = 0;
@@ -167,75 +189,13 @@ public class ass2
                         countWordLength = 0;
                         currentUnknownChar=' ';
                         continue;
-                    } else {
-                        // get the char from prev block
-                        byte CharFromPrevBlock;
-                        if (IndexCharToFindInMainString < 8128) {
-                            CharFromPrevBlock = _iv[IndexCharToFindInMainString];
-                        } else {
-                            CharFromPrevBlock = partialyDecryptedText_bytes[IndexCharToFindInMainString - 8128];
-                        }
-                        //start checking possible options for the char to find.
-                        char[] optionalWord = currentWord.toLowerCase().toCharArray();
-                        int countCharMatched = 0;
-                        char charAfterXorLowerCase=' ';
-                        boolean foundCharInUpper=false;
-                        char charAfterXorUpper=' ';
-                        //try every letter that can switch the currentLetter
-                        for (char c = 'a'; c <= 'z'; c++) {
-                            /*
-                            if(IndexCharToFindInWord>=optionalWord.length)
-                                charAfterXorUpper=' ';
-                                */
-                            optionalWord[IndexCharToFindInWord] = c;
-                            String optionalWordAsString = String.valueOf(optionalWord);
-                            //check if the new word is real
-                            if (_dictionary.contains(optionalWordAsString)) {
-                                byte ByteAfterXorUpperCase;
-                                /*
-                                 charAfterXorUpper = ' ';
-                                 foundCharInUpper = false;
-                                 */
-                                 byte cb=(byte)(c&0x00FF);
-                                byte ByteAfterXorLowerCase = (byte) ((cb) ^ CharFromPrevBlock);
-                                charAfterXorLowerCase = (char) ByteAfterXorLowerCase;
-                                if (IndexCharToFindInWord == 0) {
-                                    ByteAfterXorUpperCase = (byte) ((cb - 32) ^ CharFromPrevBlock);
-                                    charAfterXorUpper = (char) ByteAfterXorUpperCase;
-                                    if (!(currentExistingValuesInDecryptor.contains(charAfterXorUpper))&&(isLegalChar(charAfterXorUpper))) {
-                                        countCharMatched++;
-                                        foundCharInUpper = true;
-                                    }
-                                }
-                                if (currentExistingValuesInDecryptor.contains(charAfterXorLowerCase) && foundCharInUpper == false)
-                                    continue;
-                                else {
-                                    if (!(currentExistingValuesInDecryptor.contains(charAfterXorLowerCase))&&(isLegalChar(charAfterXorLowerCase)))
-                                        countCharMatched++;
-                                    if (countCharMatched > 1)
-                                        break;
-                                }
 
-                            }
-                        }
-                        if (countCharMatched == 1&&!currentExistingKeysInDecryptor.contains(currentUnknownChar)) {
-                            if (foundCharInUpper) {
-                                if(isLegalChar(charAfterXorUpper)){
-                                    _key.put(currentUnknownChar, charAfterXorUpper);
-                                    currentExistingKeysInDecryptor.add(currentUnknownChar);
-                                    currentExistingValuesInDecryptor.add(charAfterXorUpper);
-                                }
-
-                            } else {
-                                if(isLegalChar(charAfterXorLowerCase)){
-                                    _key.put(currentUnknownChar, charAfterXorLowerCase);
-                                    currentExistingKeysInDecryptor.add(currentUnknownChar);
-                                    currentExistingValuesInDecryptor.add(charAfterXorLowerCase);
-                                }
-
-                            }
-                        }
-                        countCharMatched=0;
+                    }
+                    //legal end of word
+                    else {
+                        checkOptionalWords(IndexCharToFindInWord, IndexCharToFindInMainString,
+                         encryptedText_bytes, currentWord, currentUnknownChar,  currentExistingKeysInDecryptor,
+                                 currentExistingValuesInDecryptor);
                         counterOfUnknownCharsDecrypt = 0;
                         currentWord = "";
                         IndexCharToFindInMainString = 0;
@@ -244,16 +204,101 @@ public class ass2
                         continue;
                     }
                 }
-                else{
-                    currentWord += partialyDecryptedText_string.charAt(i);
-                    countWordLength++;
+                else{// not end of word
+                    if(isLegalChar(currentChar)&&! _key.containsKey(currentChar)){
+                        currentWord += currentChar;
+                        countWordLength++;
+                    }
+                    else
+                    {
+                        currentWord += (char)ByteAfterXor;
+                        countWordLength++;
+                    }
                 }
-
             }
         }
         getTheKey();
         WriteKeyToFile(_key);
     }
+
+
+private static void checkOptionalWords(int IndexCharToFindInWord,int IndexCharToFindInMainString,
+byte[] encryptedText_bytes,String currentWord,char currentUnknownChar, Set<Character> currentExistingKeysInDecryptor,
+                                       Set<Character> currentExistingValuesInDecryptor){
+
+    {
+        // get the char from prev block
+        byte CharFromPrevBlock;
+        if (IndexCharToFindInMainString < 8128) {
+            CharFromPrevBlock = _iv[IndexCharToFindInMainString];
+        } else {
+            CharFromPrevBlock = encryptedText_bytes[IndexCharToFindInMainString - 8128];
+        }
+        //start checking possible options for the char to find.
+        char[] optionalWord = currentWord.toLowerCase().toCharArray();
+        int countCharMatched = 0;
+        char charAfterXorLowerCase=' ';
+        boolean foundCharInUpper=false;
+        char charAfterXorUpper=' ';
+        //try every letter that can switch the currentLetter
+
+        for (char optionalChar = 'a'; optionalChar <= 'z'; optionalChar++) {
+            optionalWord[IndexCharToFindInWord] = optionalChar;
+            String optionalWordAsString = String.valueOf(optionalWord);
+            //check if the new word is real
+            if (_dictionary.contains(optionalWordAsString)) {
+                byte ByteAfterXorUpperCase;
+                byte cb=(byte)(optionalChar&0x00FF);
+                byte ByteAfterXorLowerCase = (byte) ((cb) ^ CharFromPrevBlock);
+                charAfterXorLowerCase = (char) ByteAfterXorLowerCase;
+
+                if (IndexCharToFindInWord == 0) {
+                    ByteAfterXorUpperCase = (byte) ((cb - 32) ^ CharFromPrevBlock);
+                    charAfterXorUpper = (char) ByteAfterXorUpperCase;
+                    // the uppercase not in values and legal
+                    if (!(currentExistingValuesInDecryptor.contains(charAfterXorUpper))&&(isLegalChar(charAfterXorUpper))) {
+                        countCharMatched++;
+                        foundCharInUpper = true;
+                    }
+                }
+
+
+                if (currentExistingValuesInDecryptor.contains(charAfterXorLowerCase) && !foundCharInUpper )
+                    continue;
+
+                if (!(currentExistingValuesInDecryptor.contains(charAfterXorLowerCase))&&(isLegalChar(charAfterXorLowerCase)))
+                        countCharMatched++;
+                if (countCharMatched > 1)
+                        break;
+
+
+            }
+        }
+        if (countCharMatched == 1 &&!currentExistingKeysInDecryptor.contains(currentUnknownChar)) {
+            if (foundCharInUpper) {
+                if(isLegalChar(charAfterXorUpper ) && !currentExistingKeysInDecryptor.contains(currentUnknownChar) && !currentExistingValuesInDecryptor.contains(charAfterXorLowerCase)){
+                    _key.put(currentUnknownChar, charAfterXorUpper);
+                    currentExistingKeysInDecryptor.add(currentUnknownChar);
+                    currentExistingValuesInDecryptor.add(charAfterXorUpper);
+                }
+            }
+            else {
+                if(isLegalChar(charAfterXorLowerCase) && !currentExistingKeysInDecryptor.contains(currentUnknownChar) && !currentExistingValuesInDecryptor.contains(charAfterXorLowerCase)){
+                    _key.put(currentUnknownChar, charAfterXorLowerCase);
+                    currentExistingKeysInDecryptor.add(currentUnknownChar);
+                    currentExistingValuesInDecryptor.add(charAfterXorLowerCase);
+                }
+
+            }
+        }
+    }
+
+
+}
+
+
+
+
 
 private static boolean isLegalChar(char c){
         if((c >= 65 && c <= 90) || (c >= 97 && c <= 122))
