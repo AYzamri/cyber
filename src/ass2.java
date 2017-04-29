@@ -4,6 +4,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Time;
 import java.util.*;
 
 /**
@@ -19,8 +20,7 @@ public class ass2
     private static String _outputPath;
     private static int Block_Size;
     private static boolean cbc52Attack=false;
-    private static int indexOfChar =0;
-    private static Set<Integer> setOfIndexes = new HashSet<>();
+    private static boolean stop=false;
     InputStream stream;
 
     public ass2(String[] args) {
@@ -48,8 +48,24 @@ public class ass2
         scan.close();
 
 
+        Thread thread = new Thread(){
+            public void run(){
+            long startTime = System.currentTimeMillis();
+            long currentTime =System.currentTimeMillis();
+            long elapsedTime=0;
+
+            while (elapsedTime<58000) {
+                currentTime = System.currentTimeMillis();
+                elapsedTime = currentTime - startTime;
+            }
+            stop=true;
+        }
+        };
+        thread.start();
+
         try {
             runAlgorithm(_flags.get("-a"));
+            thread.stop();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -103,13 +119,15 @@ public class ass2
         permutation("abcdefgh",SetOfKeys);
         int counter=0;
         for (String currentKey:SetOfKeys) {
+            if(stop)
+                break;
             setDecryptor(currentKey);
             String deCipherToCheck= DecryptionAction(PartOfCipheredText);
             int counterWordsInDict=0;
             int totalWords=0;
             String[] decipheredTextSplited = deCipherToCheck.split("[\\.,\\s!;?:&\"\\[\\]]+");
             int lengthOfSplited=decipheredTextSplited.length;
-            while(totalWords <decipheredTextSplited.length )
+            while(totalWords <decipheredTextSplited.length && !stop)
             {
                 String currentWord = decipheredTextSplited[totalWords];
                 if(currentWord.matches(".*\\d.*")){ // if number
@@ -132,8 +150,8 @@ public class ass2
             counter++;
         }
 
-        Map<Character,Character> zamrial = getTheKey(maxMatch.getKey());
-        WriteKeyToFile(zamrial);
+        Map<Character,Character> KeyMapToReturn = getTheKey(maxMatch.getKey());
+        WriteKeyToFile(KeyMapToReturn);
 
     }
 
@@ -172,15 +190,9 @@ public class ass2
         byte ByteAfterXor=0;
         //goes over the entire string twice.
 
-        for(int j = 0 ; j< 2;j++) {
-            //if finished finding all keys->stop
-            if (currentExistingKeysInDecryptor.size() == 52)
-                break;
-
-
-            for (int i = 0; i < encryptedText_bytes.length; i++) {
+        while(currentExistingKeysInDecryptor.size() != 52 && !stop) { //if finished finding all keys->stop
+            for (int i = 0; i < encryptedText_bytes.length && !stop; i++) {
                 //if finished finding all keys->stop
-
                 if (currentExistingKeysInDecryptor.size() == 52)
                     break;
                 //check if contains a character that cannot be decrypted by the partialKey -count and save ++Change++
@@ -422,13 +434,8 @@ private static boolean isLegalChar(char c){
             }
             else{
                 currentByte=textToUseWithKey[j];
-                char currentChar = (char)currentByte;
-                if(cbc52Attack && (isLegalChar(currentChar))){
-                    setOfIndexes.add(indexOfChar);
-                }
             }
             toReturn[j]=currentByte;
-            indexOfChar++;
         }
         return toReturn;
     }
@@ -489,9 +496,6 @@ private static boolean isLegalChar(char c){
         }
        return  ABxor;
         }
-
-
-
 
     private static byte[] readFile_bytes(String path)
             throws IOException
